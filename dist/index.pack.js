@@ -505,8 +505,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 exports.default = App;
@@ -527,24 +525,34 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function App() {
   // useState
+  var defaultState = {
+    tenzies: false,
+    rolls: 0
+  };
+
   var _useState = (0, _react.useState)(allNewDice()),
       _useState2 = _slicedToArray(_useState, 2),
       dice = _useState2[0],
       setDice = _useState2[1];
 
-  var _useState3 = (0, _react.useState)(false),
+  var _useState3 = (0, _react.useState)(defaultState.tenzies),
       _useState4 = _slicedToArray(_useState3, 2),
       tenzies = _useState4[0],
       setTenzies = _useState4[1];
+
+  var _useState5 = (0, _react.useState)(defaultState.rolls),
+      _useState6 = _slicedToArray(_useState5, 2),
+      rolls = _useState6[0],
+      setRolls = _useState6[1];
 
   // useEffect
 
 
   (0, _react.useEffect)(function () {
-    var firstValue = dice[0].value;
     var allHeld = dice.every(function (die) {
       return die.held;
     });
+    var firstValue = dice[0].value;
     var allSameNumber = dice.every(function (die) {
       return die.value === firstValue;
     });
@@ -552,20 +560,25 @@ function App() {
       setTenzies(true);
     }
   }, [dice]);
+  (0, _react.useEffect)(function () {
+    if (!tenzies) {
+      setDice(allNewDice());
+      setRolls(defaultState.rolls);
+    }
+  }, [tenzies]);
 
   // functions
-  function randomDieValue() {
-    return Math.ceil(Math.random() * 6);
+  function getRandomDie(i) {
+    return {
+      value: Math.ceil(Math.random() * 6),
+      held: false,
+      id: i + 1
+    };
   }
   function allNewDice() {
     var newArray = [];
     for (var i = 0; i < 10; i++) {
-      var newDie = {
-        value: randomDieValue(),
-        held: false,
-        id: i + 1
-      };
-      newArray.push(newDie);
+      newArray.push(getRandomDie(i));
     }
     return newArray;
   }
@@ -576,51 +589,52 @@ function App() {
           if (die.held) {
             return die;
           } else {
-            return {
-              value: randomDieValue(),
-              held: false,
-              id: i + 1
-            };
+            return getRandomDie(i);
           }
         });
       });
+      setRolls(function (prevRolls) {
+        return prevRolls + 1;
+      });
     } else {
-      setDice(allNewDice());
-      setTenzies(false);
+      setTenzies(defaultState.tenzies);
     }
   }
   function holdDice(id) {
-    setDice(function (prevDice) {
-      return prevDice.map(function (die) {
-        if (die.id === id) {
-          return {
-            value: die.value,
-            held: !die.held,
-            id: die.id
-          };
-        } else {
-          return die;
-        }
+    if (!tenzies) {
+      setDice(function (prevDice) {
+        return prevDice.map(function (die) {
+          if (die.id === id) {
+            return {
+              value: die.value,
+              held: !die.held,
+              id: die.id
+            };
+          } else {
+            return die;
+          }
+        });
       });
-    });
+    }
   }
 
   // JSX elements
   var diceElements = dice.map(function (die) {
-    return _react2.default.createElement(_Die2.default, _extends({
-      key: die.id
-    }, die, {
-      hold: function hold() {
+    return _react2.default.createElement(_Die2.default, {
+      key: die.id,
+      value: die.value,
+      held: die.held,
+      handleClickDie: function handleClickDie() {
         return holdDice(die.id);
       }
-    }));
+    });
   });
 
   // render
   return _react2.default.createElement(
     "main",
     null,
-    tenzies && _react2.default.createElement(_reactConfetti2.default, null),
+    tenzies && _react2.default.createElement(_reactConfetti2.default, { recycle: false }),
     _react2.default.createElement(
       "h1",
       null,
@@ -629,7 +643,7 @@ function App() {
     _react2.default.createElement(
       "p",
       null,
-      "Roll until all dice are the same. Click each die to freeze it at its current value between rolls."
+      "Roll until all dice are the same. Click a die to freeze it between rolls."
     ),
     _react2.default.createElement(
       "div",
@@ -643,6 +657,12 @@ function App() {
         onClick: rollUnheldDice
       },
       tenzies ? "Reset Game" : "Roll"
+    ),
+    _react2.default.createElement(
+      "p",
+      null,
+      "Rolls: ",
+      rolls
     )
   );
 }
@@ -712,9 +732,9 @@ var _react2 = _interopRequireDefault(_react);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function Die(_ref) {
-  var held = _ref.held,
-      hold = _ref.hold,
-      value = _ref.value;
+  var value = _ref.value,
+      held = _ref.held,
+      handleClickDie = _ref.handleClickDie;
 
   var styles = {
     backgroundColor: held ? "#59E391" : "white"
@@ -723,7 +743,7 @@ function Die(_ref) {
     "div",
     {
       className: "die-face",
-      onClick: hold,
+      onClick: handleClickDie,
       style: styles
     },
     _react2.default.createElement(

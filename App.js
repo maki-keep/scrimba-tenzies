@@ -4,32 +4,42 @@ import Die from "./Die";
 
 export default function App() {
   // useState
+  const defaultState = {
+    tenzies: false,
+    rolls: 0
+  }
   const [dice, setDice] = useState(allNewDice());
-  const [tenzies, setTenzies] = useState(false);
+  const [tenzies, setTenzies] = useState(defaultState.tenzies);
+  const [rolls, setRolls] = useState(defaultState.rolls);
 
   // useEffect
   useEffect(() => {
-    const firstValue = dice[0].value;
     const allHeld = dice.every(die => die.held);
+    const firstValue = dice[0].value;
     const allSameNumber = dice.every(die => die.value === firstValue);
     if (allHeld && allSameNumber) {
       setTenzies(true);
     }
   }, [dice]);
+  useEffect(() => {
+    if (!tenzies) {
+      setDice(allNewDice());
+      setRolls(defaultState.rolls);
+    }
+  }, [tenzies]);
 
   // functions
-  function randomDieValue() {
-    return Math.ceil(Math.random() * 6);
+  function getRandomDie(i) {
+    return {
+      value: Math.ceil(Math.random() * 6),
+      held: false,
+      id: i + 1
+    };
   }
   function allNewDice() {
     const newArray = [];
     for (let i = 0; i < 10; i++) {
-      const newDie = {
-        value: randomDieValue(),
-        held: false,
-        id: i + 1
-      };
-      newArray.push(newDie);
+      newArray.push(getRandomDie(i));
     }
     return newArray;
   }
@@ -39,38 +49,37 @@ export default function App() {
         if (die.held) {
           return die;
         } else {
-          return {
-            value: randomDieValue(),
-            held: false,
-            id: i + 1
-          };
+          return getRandomDie(i);
         }
       }));
+      setRolls(prevRolls => prevRolls + 1);
     } else {
-      setDice(allNewDice());
-      setTenzies(false);
+      setTenzies(defaultState.tenzies);
     }
   }
   function holdDice(id) {
-    setDice(prevDice => prevDice.map(die => {
-      if (die.id === id) {
-        return {
-          value: die.value,
-          held: !die.held,
-          id: die.id
-        };
-      } else {
-        return die;
-      }
-    }));
+    if (!tenzies) {
+      setDice(prevDice => prevDice.map(die => {
+        if (die.id === id) {
+          return {
+            value: die.value,
+            held: !die.held,
+            id: die.id
+          };
+        } else {
+          return die;
+        }
+      }));
+    }
   }
 
   // JSX elements
   const diceElements = dice.map((die) => (
     <Die
       key={die.id}
-      {...die}
-      hold={() => holdDice(die.id)}
+      value={die.value}
+      held={die.held}
+      handleClickDie={() => holdDice(die.id)}
     />
   ));
 
@@ -78,10 +87,10 @@ export default function App() {
   return (
     <main>
     {tenzies && (
-      <Confetti />
+      <Confetti recycle={false} />
     )}
       <h1>Tenzies</h1>
-      <p>Roll until all dice are the same. Click each die to freeze it at its current value between rolls.</p>
+      <p>Roll until all dice are the same. Click a die to freeze it between rolls.</p>
       <div className="die-container">{diceElements}</div>
       <button
         className="roll-dice"
@@ -89,6 +98,7 @@ export default function App() {
       >
         {tenzies ? "Reset Game" : "Roll"}
       </button>
+      <p>Rolls: {rolls}</p>
     </main>
   );
 }
