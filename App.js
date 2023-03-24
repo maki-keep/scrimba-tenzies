@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
+import useWindowSize from "react-use-window-size";
 import Confetti from "react-confetti";
 import Die from "./Die";
 
 export default function App() {
+  const { width, height } = useWindowSize();
+
   // useState
   const defaultState = {
     tenzies: false,
@@ -87,7 +90,11 @@ export default function App() {
   return (
     <main>
     {tenzies && (
-      <Confetti recycle={false} />
+      <Confetti
+        width={width}
+        height={height}
+        recycle={false}
+      />
     )}
       <h1>Tenzies</h1>
       <p>Roll until all dice are the same. Click a die to freeze it between rolls.</p>

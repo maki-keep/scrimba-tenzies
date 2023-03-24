@@ -32,6 +32,7 @@ p {
   gap: 20px;
   grid-template: auto auto / repeat(5, 1fr);
   margin-bottom: 40px;
+  overflow: auto;
 }
 .die-face {
   align-items: center;
